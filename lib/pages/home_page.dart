@@ -1,9 +1,23 @@
+//PACKAGE FLUTTER
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
+//UTILS
+import 'package:qr_reader_app/utils/utils.dart' as utils;
+
+//PACKAGE THIRDS
 import 'package:qrcode_reader/qrcode_reader.dart';
 
+//BLOC
+import 'package:qr_reader_app/bloc/scan_bloc.dart';
+
+//MODEL
+import 'package:qr_reader_app/models/scan_model.dart';
+
+//PAGINAS
 import 'package:qr_reader_app/pages/address_page.dart';
-import 'package:qr_reader_app/pages/map_page.dart';
+import 'package:qr_reader_app/pages/maps_page.dart';
 
 class HomePage extends StatefulWidget {
   
@@ -12,6 +26,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+
+  final scansBloc = new ScansBloc();
+
   int pageIndex = 0;
 
   @override
@@ -22,7 +39,7 @@ class _HomePageState extends State<HomePage> {
         actions: <Widget>[
           IconButton(
             icon: Icon( Icons.delete_forever ),
-            onPressed: () {},
+            onPressed: scansBloc.deleteScansAll,
           )
         ],
       ),
@@ -30,38 +47,46 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: _createBottomNavigationBar(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
-        onPressed: _scanQR,
+        onPressed: () => _scanQR(context),
         child: Icon( Icons.filter_center_focus ),
         backgroundColor: Theme.of(context).primaryColor,
       ),
     );
   }
 
-  _scanQR() async {
+  _scanQR(BuildContext context) async {
     
-    String futureString = '';
+    String futureString;
 
-    // try {
-    //   futureString = await new QRCodeReader().scan();
-    // } catch (e) {
-    //   futureString = e.toString();
-    // }
+    try {
+      futureString = await new QRCodeReader().scan();
+    } catch (e) {
+      futureString = e.toString();
+    }
 
-    // print('futureString: $futureString');
+    if ( futureString != null) {
+      final scan = new ScanModel(value: futureString);
+      scansBloc.addScan(scan);
 
-    // if ( futureString != null) {
-    //   print('HAY INFORMACION');
-    // }
+      if ( Platform.isAndroid || Platform.isIOS ) {
+        Future.delayed( Duration( milliseconds: 750 ), () {
+          utils.openScan(context,scan);
+        });
+      } else {
+        utils.openScan(context,scan);
+      }
+
+    }
 
   }
 
   Widget _callPage( int pageNow ) {
     switch ( pageNow ) {
-      case 0: return MapPage();
+      case 0: return MapsPage();
       case 1: return AddressPage();
 
       default:
-        return MapPage();
+        return MapsPage();
     }
   }
 
